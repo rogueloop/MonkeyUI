@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>L2 WASM</title>
+    <style>
+        body {
+            display: flex;
+            padding: 20px;
+        }
+        #sidebar {
+            width: 200px;
+            border-right: 1px solid #ccc;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #content {
+            flex-grow: 1;
+            padding-left: 20px;
+        }
+        #sidebar a {
+            display: block;
+            padding: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            color: #333;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+        #sidebar a:hover {
+            background-color: #f0f0f0;
+        }
+        #inputField {
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        #outputHash {
+            width: 100%;
+            height: 300px;
+            color: white;
+            background-color: black;
+            border: 1px solid #555;
+            padding: 10px;
+            font-family: monospace;
+            resize: vertical;
+        }
+        html {
+            font-family: Arial, serif;
+        }
+    </style>
+</head>
+<body>
+<script src="wasm_exec.js"></script>
+<script>
+    let wasmLoaded = false;
+    const go = new Go();
+    
+    WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
+        go.run(result.instance);
+        wasmLoaded = true;  
+    });
+</script>
+<div id="sidebar">
+    <a href="#" onclick="setCommand('33 +74')">Addition</a>
+    <a href="#" onclick="setCommand('67*34')">Multiplication </a>
+    <a href="#" onclick='setCommand("\"Hello\""+"+"+"\"world\"")' onmouseover="setInfo('Concatination')" >Concatination</a>
+    <a href="#" onclick='setCommand(`let a = 10; let b = a * 2; (a + b) / 2 - 3;`)'>Arithmetic expressions</a>
+    <a href="#" onclick="setCommand('let a = 10;let b = a * 2;  let c = if (b > a) { 99 } else { 100 } ; c')">If expression</a>
+    <a href="#" onclick="setCommand(' let multiply = fn(x, y) { x * y }; multiply(50 / 2, 1 * 2)')" onmouseover="setInfo('functions')">Functions</a>
+    <a href="#" onclick='setCommand("let myArray = [\"Thorsten\", \"Ball\", 28, fn(x) { x * x }]; myArray[0] ;")'>Arrays</a>
+    <a href="#" onclick='setCommand("let myArray = [\"one\", \"two\", \"three\"]; len(myArray);")'>Array Lenght</a>
+  
+    <!-- Add more commands as needed -->
+</div>
+<div id="content">
+    <label for="inputField">Enter value:</label>
+    <input id="inputField" name="Hash" type="text">
+    <div id="outputHash"></div>
+    <div id="infoSection" style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px;"></div>
+</div>
+
+
+<script>
+    var inputField = document.querySelector('#inputField');
+    var outputHash = document.querySelector('#outputHash');
+
+    var commandInfo = {
+        "Concatination": "Concatenation is the operation of joining two strings end to end.",
+        "functions": "You can define functions using fn keyword. All functions \
+        are closures in Monkey and you must use let along with fn to bind a closure to a variable. Closures enclose an environment where they are defined, and are\
+         evaluated in the environment when called. The last value in an executed function body are returned as a return value.",
+        // ... (add more descriptions for other commands)
+    };
+
+    function setCommand(command) {
+        inputField.value = command;
+        if (wasmLoaded) {
+            outputHash.innerHTML = monkeyCall(inputField.value);
+        } else {
+            outputHash.innerHTML = "Loading... Please wait";
+        }
+    }
+    function setInfo(commandName) {
+        // Update the info section based on the hovered command
+        infoSection.innerHTML = commandInfo[commandName] || "No description available.";
+    }
+    function clearInfo() {
+        infoSection.innerHTML = ""; // Clear the info when the mouse is not hovering over any command
+    }
+
+
+
+    inputField.addEventListener('keyup', function () {
+        if (wasmLoaded) {
+            outputHash.innerHTML = monkeyCall(inputField.value);
+        } else {
+            outputHash.innerHTML = "Loading... Please wait";
+        }
+    });
+</script>
+</body>
+</html>
